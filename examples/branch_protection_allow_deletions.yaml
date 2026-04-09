@@ -1,0 +1,68 @@
+---
+version: v1
+release_phase: beta
+type: rule-type
+name: branch_protection_allow_deletions
+display_name: Prevent permanent branch deletion
+short_failure_message: Branch protection allows deletions
+severity:
+  value: medium
+context:
+  provider: github
+description: Prevents the branch from being deleted
+guidance: |
+  Ensure that the "Allow deletions" setting is disabled for the branch
+  protection rule.
+
+  Prevent users from deleting matching branches.
+
+  For more information, see [GitHub's
+  documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule).
+def:
+  # Defines the section of the pipeline the rule will appear in.
+  # This will affect the template used to render multiple parts
+  # of the rule.
+  in_entity: repository
+  # Defines the schema for parameters that will be passed to the rule
+  param_schema:
+    properties:
+      branch:
+        type: string
+        description: 'The name of the branch to check. If left empty, the default branch will be used.'
+        default: ''
+  # Defines the schema for writing a rule with this rule being checked
+  rule_schema:
+    type: object
+    properties: {}
+  # Defines the configuration for ingesting data relevant for the rule
+  ingest:
+    type: rest
+    rest:
+      # This is the path to the data source. Given that this will evaluate
+      # for each repository in the organization, we use a template that
+      # will be evaluated for each repository. The structure to use is the
+      # protobuf structure for the entity that is being evaluated.
+      endpoint: '{{ $branch_param := index .Params "branch" }}/repos/{{.Entity.Owner}}/{{.Entity.Name}}/branches/{{if ne $branch_param "" }}{{ $branch_param }}{{ else }}{{ .Entity.DefaultBranch }}{{ end }}/protection'
+      # This is the method to use to retrieve the data. It should already default to JSON
+      parse: json
+      fallback:
+        - http_code: 404
+          body: |
+            {"http_status": 404, "message": "Not Protected"}
+  # Defines the configuration for evaluating data ingested against the given policy
+  eval:
+    type: jq
+    jq:
+      - ingested:
+          def: '.allow_deletions.enabled'
+        constant: false
+  # Defines the configuration for remediating the rule
+  remediate:
+    type: gh_branch_protection
+    gh_branch_protection:
+      patch: |
+        {"allow_deletions": false }
+  # Defines the configuration for alerting on the rule
+  alert:
+    type: security_advisory
+    security_advisory: {}

@@ -1,0 +1,52 @@
+name: 'Test Suite: GitHub Actions Allowed Permissions'
+rule_path: 'github_actions_allowed.yaml'
+cases:
+  - name: "Should ALLOW when repository exactly matches profile ('selected')"
+    expect: allow
+    def:
+      allowed_actions: 'selected'
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+    mock_ingest:
+      enabled: true
+      allowed_actions: 'selected'
+
+  - name: "Should DENY when repository allows 'all' but profile enforces 'selected'"
+    expect: deny
+    def:
+      allowed_actions: 'selected'
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+    mock_ingest:
+      enabled: true
+      allowed_actions: 'all'
+
+  - name: "Should ALLOW when enforcing 'local_only' and repository matches"
+    expect: allow
+    def:
+      allowed_actions: 'local_only'
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+    mock_ingest:
+      enabled: true
+      allowed_actions: 'local_only'
+
+  - name: 'Should DENY if GitHub API returns empty/unexpected payload'
+    expect: deny
+    def:
+      allowed_actions: 'all'
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+    mock_ingest: {}

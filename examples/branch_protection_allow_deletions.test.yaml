@@ -1,0 +1,52 @@
+name: 'Test Suite: Prevent Permanent Branch Deletion'
+rule_path: 'branch_protection_allow_deletions.yaml'
+cases:
+  - name: 'Should ALLOW when branch deletions are properly disabled'
+    expect: allow
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+        default_branch: 'main'
+    mock_ingest:
+      allow_deletions:
+        enabled: false
+
+  - name: 'Should DENY when branch deletions are explicitly enabled'
+    expect: deny
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+        default_branch: 'main'
+    mock_ingest:
+      allow_deletions:
+        enabled: true
+
+  - name: 'Should DENY when branch is not protected (Triggering the 404 Fallback)'
+    expect: deny
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+        default_branch: 'main'
+    mock_ingest:
+      http_status: 404
+      message: 'Not Protected'
+
+  - name: 'Should ALLOW with custom branch parameter'
+    params:
+      branch: 'release-v1'
+    expect: allow
+    entity:
+      type: repository
+      entity:
+        owner: 'mindersec'
+        name: 'minder'
+        default_branch: 'main'
+    mock_ingest:
+      allow_deletions:
+        enabled: false

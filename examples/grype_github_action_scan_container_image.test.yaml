@@ -1,0 +1,23 @@
+name: 'Test Suite: Ensure Grype Action Scans Images'
+rule_path: 'grype_github_action_scan_container_image.yaml'
+cases:
+  - name: 'Should ALLOW when workflow uses Grype with image param'
+    expect: allow
+    entity:
+      type: repository
+    git:
+      repo_base: 'valid_workflow'
+
+  - name: 'Should DENY when Grype is used but missing image param'
+    expect: deny
+    entity:
+      type: repository
+    git:
+      repo_base: 'missing_image'
+
+  - name: 'Should DENY when no Grype action is present'
+    expect: deny
+    entity:
+      type: repository
+    git:
+      repo_base: 'no_grype'
